@@ -3,13 +3,6 @@ set -e
 
 command -v python3 >/dev/null || { echo "Python3 not found."; exit 1; }
 
-if ! command -v pipx >/dev/null; then
-  echo "Installing pipx..."
-  python3 -m pip install --user pipx
-  export PATH="$HOME/.local/bin:$PATH"
-  python3 -m pipx ensurepath
-fi
-
 export PATH="$HOME/.local/bin:$PATH"
 
 
