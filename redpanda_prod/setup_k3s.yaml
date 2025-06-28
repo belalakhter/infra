@@ -1,0 +1,74 @@
+---
+- name: Install kubectl, K3s server, and Helm with verification
+  hosts: all
+  become: true
+  tasks:
+    - name: Get latest stable kubectl version
+      shell: curl -L -s https://dl.k8s.io/release/stable.txt
+      register: kubectl_version
+
+    - name: Download kubectl binary
+      get_url:
+        url: "https://dl.k8s.io/release/{{ kubectl_version.stdout }}/bin/linux/amd64/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: "0755"
+      when: kubectl_version.stdout != ""
+
+    - name: Verify kubectl installation
+      command: kubectl version --client --output=yaml
+      register: kubectl_check
+      changed_when: false
+      failed_when: kubectl_check.rc != 0
+
+    - name: Allow Kubernetes API server port in UFW
+      ufw:
+        rule: allow
+        port: 6443
+        proto: tcp
+
+    - name: Allow pod network in UFW
+      ufw:
+        rule: allow
+        from_ip: 10.42.0.0/16
+        to_ip: any
+
+    - name: Allow service network in UFW
+      ufw:
+        rule: allow
+        from_ip: 10.43.0.0/16
+        to_ip: any
+
+    - name: Install K3s server without Flannel
+      shell: |
+        curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="server" sh -s - --flannel-backend none
+      args:
+        executable: /bin/bash
+
+    - name: Export kubeconfig for user
+      copy:
+        content: "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml"
+        dest: /etc/profile.d/kubeconfig.sh
+        mode: "0755"
+
+    - name: Verify k3s installation
+      command: k3s --version
+      register: k3s_check
+      changed_when: false
+      failed_when: k3s_check.rc != 0
+
+    - name: Download Helm install script
+      get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        dest: /tmp/get_helm.sh
+        mode: "0700"
+
+    - name: Run Helm install script
+      shell: /tmp/get_helm.sh
+      args:
+        executable: /bin/bash
+
+    - name: Verify Helm installation
+      command: helm version
+      register: helm_check
+      changed_when: false
+      failed_when: helm_check.rc != 0

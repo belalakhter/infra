@@ -1,0 +1,55 @@
+---
+- name: Redpanda deployment with cert-manager using Helm
+  hosts: all
+  become: true
+  vars:
+    namespace: redpanda_ns
+
+  tasks:
+    - name: Add cert-manager Helm repo
+      command: helm repo add jetstack https://charts.jetstack.io
+      args:
+        creates: /root/.cache/helm/repository/jetstack-index.yaml
+
+    - name: Add Redpanda Helm repo
+      command: helm repo add redpanda https://charts.redpanda.com
+      args:
+        creates: /root/.cache/helm/repository/redpanda-index.yaml
+
+    - name: Update Helm repos
+      command: helm repo update
+
+    - name: Install cert-manager
+      command: >
+        helm install cert-manager jetstack/cert-manager
+        --set crds.enabled=true
+        --namespace cert-manager
+        --create-namespace
+      args:
+        creates: /etc/kubernetes/manifests/cert-manager.yaml
+
+    - name: Install Redpanda with custom values
+      command: >
+        helm install redpanda redpanda/redpanda
+        --version 5.10.2
+        --namespace {{ namespace }}
+        --create-namespace
+        --values /home/{{ ansible_user }}/redpanda-values.yaml
+
+    - name: Wait for Redpanda statefulset to be ready
+      shell: |
+        kubectl --namespace {{ namespace }} rollout status statefulset redpanda --watch
+      register: rollout_status
+      changed_when: false
+
+    - name: Show Redpanda pod node placement
+      shell: |
+        kubectl get pod --namespace {{ namespace }} \
+        -o=custom-columns=NODE:.spec.nodeName,NAME:.metadata.name \
+        -l app.kubernetes.io/component=redpanda-statefulset
+      register: pod_layout
+      changed_when: false
+
+    - name: Display Redpanda pod-to-node mapping
+      debug:
+        msg: "{{ pod_layout.stdout_lines }}"
