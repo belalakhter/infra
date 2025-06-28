@@ -5,7 +5,7 @@ command -v python3 >/dev/null || { echo "Python3 not found."; exit 1; }
 
 if ! command -v pip3 >/dev/null; then
   echo "Installing pip via get-pip.py..."
-  curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+  wget https://bootstrap.pypa.io/get-pip.py -o get-pip.py
   python3 get-pip.py --user
   rm -f get-pip.py
   export PATH="$HOME/.local/bin:$PATH"
