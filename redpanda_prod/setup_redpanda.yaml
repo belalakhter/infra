@@ -3,7 +3,7 @@
   hosts: all
   become: true
   vars:
-    namespace: redpanda_ns
+    namespace: redpanda
 
   tasks:
     - name: Add cert-manager Helm repo
