@@ -40,6 +40,8 @@
         --namespace {{ namespace }}
         --create-namespace
         --values /home/{{ ansible_user_id }}/redpanda-values.yaml
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
     - pause:
         seconds: 5
