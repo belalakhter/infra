@@ -7,6 +7,9 @@
       shell: curl -L -s https://dl.k8s.io/release/stable.txt
       register: kubectl_version
 
+    - pause:
+        seconds: 5
+
     - name: Download kubectl binary
       get_url:
         url: "https://dl.k8s.io/release/{{ kubectl_version.stdout }}/bin/linux/amd64/kubectl"
@@ -14,11 +17,17 @@
         mode: "0755"
       when: kubectl_version.stdout != ""
 
+    - pause:
+        seconds: 5
+
     - name: Verify kubectl installation
       command: kubectl version --client --output=yaml
       register: kubectl_check
       changed_when: false
       failed_when: kubectl_check.rc != 0
+
+    - pause:
+        seconds: 5
 
     - name: Allow Kubernetes API server port in UFW
       ufw:
@@ -26,11 +35,17 @@
         port: 6443
         proto: tcp
 
+    - pause:
+        seconds: 5
+
     - name: Allow pod network in UFW
       ufw:
         rule: allow
         from_ip: 10.42.0.0/16
         to_ip: any
+
+    - pause:
+        seconds: 5
 
     - name: Allow service network in UFW
       ufw:
@@ -38,17 +53,27 @@
         from_ip: 10.43.0.0/16
         to_ip: any
 
+    - pause:
+        seconds: 5
+
     - name: Install K3s server without Flannel
       shell: |
         curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="server" sh -s - --flannel-backend none
       args:
         executable: /bin/bash
 
-    - name: Export kubeconfig for user
+    - pause:
+        seconds: 5
+
+    - name: Export kubeconfig for all users
       copy:
-        content: "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml"
+        content: |
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
         dest: /etc/profile.d/kubeconfig.sh
         mode: "0755"
+
+    - pause:
+        seconds: 5
 
     - name: Verify k3s installation
       command: k3s --version
@@ -56,16 +81,25 @@
       changed_when: false
       failed_when: k3s_check.rc != 0
 
+    - pause:
+        seconds: 5
+
     - name: Download Helm install script
       get_url:
         url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
         dest: /tmp/get_helm.sh
         mode: "0700"
 
+    - pause:
+        seconds: 5
+
     - name: Run Helm install script
       shell: /tmp/get_helm.sh
       args:
         executable: /bin/bash
+
+    - pause:
+        seconds: 5
 
     - name: Verify Helm installation
       command: helm version
