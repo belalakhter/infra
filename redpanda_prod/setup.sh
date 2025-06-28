@@ -7,6 +7,13 @@ export PATH="$HOME/.local/bin:$PATH"
 
 command -v python3 >/dev/null || { echo "Python3 not found."; exit 1; }
 
+if ! command -v ufw >/dev/null; then
+  echo "Installing ufw..."
+  sudo apt update
+  sudo apt install -y ufw
+fi
+
+
 if ! command -v ansible-playbook >/dev/null; then
   echo "Installing Ansible via pipx..."
   pipx install --include-deps ansible
