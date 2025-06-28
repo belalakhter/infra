@@ -39,7 +39,7 @@
         --version 5.10.2
         --namespace {{ namespace }}
         --create-namespace
-        --values /home/{{ lookup('env', 'USER') }}/infra/redpanda_prod/redpanda-values.yaml
+        --values /home/{{ lookup('env', 'USER_ENV') }}/infra/redpanda_prod/redpanda-values.yaml
       environment:
         KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
