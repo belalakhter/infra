@@ -80,6 +80,8 @@
             name: redpanda
           spec:
             clusterSpec:
+              external:
+                type: NodePort
               resources:
                 requests:
                   cpu: 500m
