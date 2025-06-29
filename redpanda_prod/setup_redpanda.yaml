@@ -77,8 +77,8 @@
             name: redpanda
           spec:
             clusterSpec:
-              replicas: 2
               statefulset:
+                replicas: 2
                 extraVolumes: |-
                   - name: redpanda-io-config
                     configMap:
