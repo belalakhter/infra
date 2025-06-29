@@ -14,5 +14,8 @@ if ! command -v ansible-playbook >/dev/null; then
   pipx install --include-deps ansible
 fi
 
+
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
 ansible-playbook -i inventory setup_k3s.yaml
 ansible-playbook -i inventory setup_redpanda.yaml
