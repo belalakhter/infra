@@ -68,7 +68,7 @@
       file:
         path: /tmp/created_redpanda_io_config_cm
         state: touch
-      when: configmap_create_result.rc == 0
+      when: configmap_create_result.changed
 
     - name: Create redpanda-cluster.yaml
       copy:
