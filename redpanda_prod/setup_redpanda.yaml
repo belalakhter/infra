@@ -1,20 +1,19 @@
 ---
-- name: Redpanda deployment with cert-manager using Helm
+- name: Deploy Redpanda with cert-manager and operator
   hosts: all
   become: true
-  vars:
-    namespace: redpanda
-
   tasks:
-    - name: Add cert-manager Helm repo
-      command: helm repo add jetstack https://charts.jetstack.io
-      args:
-        creates: /root/.cache/helm/repository/jetstack-index.yaml
+    - name: Check if user can create CRDs
+      command: kubectl auth can-i create CustomResourceDefinition --all-namespaces
+      register: crd_check
 
-    - name: Add Redpanda Helm repo
-      command: helm repo add redpanda https://charts.redpanda.com
-      args:
-        creates: /root/.cache/helm/repository/redpanda-index.yaml
+    - name: Fail if CRD permissions are not granted
+      fail:
+        msg: "You do not have permissions to create CustomResourceDefinition."
+      when: crd_check.stdout != "yes"
+
+    - name: Add jetstack Helm repo
+      command: helm repo add jetstack https://charts.jetstack.io
 
     - name: Update Helm repos
       command: helm repo update
@@ -25,44 +24,69 @@
         --set crds.enabled=true
         --namespace cert-manager
         --create-namespace
-      environment:
-        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Install Redpanda Operator CRDs
+      shell: |
+        kubectl kustomize "https://github.com/redpanda-data/redpanda-operator//operator/config/crd?ref=v2.4.2" | kubectl apply --server-side -f -
       args:
-        creates: /etc/kubernetes/manifests/cert-manager.yaml
+        executable: /bin/bash
 
-    - pause:
-        seconds: 5
+    - name: Add Redpanda Helm repo
+      command: helm repo add redpanda https://charts.redpanda.com
 
-    - name: Install Redpanda with custom values
+    - name: Upgrade/install Redpanda controller
       command: >
-        helm upgrade --install redpanda redpanda/redpanda
-        --version 5.10.2
-        --namespace {{ namespace }}
+        helm upgrade --install redpanda-controller redpanda/operator
+        --namespace redpanda
         --create-namespace
-        --values ./redpanda-values.yaml
-      environment:
-        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+        --version v2.4.2
 
-    - pause:
-        seconds: 5
+    - name: Wait for Redpanda controller rollout
+      command: kubectl --namespace redpanda rollout status --watch deployment/redpanda-controller-operator
 
-    - name: Wait for Redpanda statefulset to be ready
+    - name: Create redpanda-cluster.yaml
+      copy:
+        dest: ./redpanda-cluster.yaml
+        content: |
+          apiVersion: cluster.redpanda.com/v1alpha2
+          kind: Redpanda
+          metadata:
+            name: redpanda
+          spec:
+            clusterSpec:
+              statefulset:
+                extraVolumes: |-
+                  - name: redpanda-io-config
+                    configMap:
+                      name: redpanda-io-config
+                extraVolumeMounts: |-
+                  - name: redpanda-io-config
+                    mountPath: /etc/redpanda-io-config
+                additionalRedpandaCmdFlags:
+                  - "--io-properties-file=/etc/redpanda-io-config/io-config.yaml"
+
+    - name: Apply Redpanda CR
+      command: kubectl apply -f ./redpanda-cluster.yaml --namespace redpanda
+
+    - name: Wait for Redpanda resource readiness
       shell: |
-        kubectl --namespace {{ namespace }} rollout status statefulset redpanda --watch
-      register: rollout_status
-      changed_when: false
+        kubectl get redpanda --namespace redpanda --watch
+      async: 300
+      poll: 0
 
-    - pause:
-        seconds: 5
+    - name: Show Redpanda pods
+      command: kubectl get pods --namespace redpanda
+      register: pod_list
 
-    - name: Show Redpanda pod node placement
-      shell: |
-        kubectl get pod --namespace {{ namespace }} \
-        -o=custom-columns=NODE:.spec.nodeName,NAME:.metadata.name \
-        -l app.kubernetes.io/component=redpanda-statefulset
-      register: pod_layout
-      changed_when: false
-
-    - name: Display Redpanda pod-to-node mapping
+    - name: Print Redpanda pods
       debug:
-        msg: "{{ pod_layout.stdout_lines }}"
+        msg: "{{ pod_list.stdout_lines }}"
+
+    - name: Check which node each Redpanda pod is on
+      command: >
+        kubectl get pod --namespace redpanda -o=custom-columns=NODE:.spec.nodeName,NAME:.metadata.name -l app.kubernetes.io/component=redpanda-statefulset
+      register: node_map
+
+    - name: Print pod to node mapping
+      debug:
+        msg: "{{ node_map.stdout_lines }}"
