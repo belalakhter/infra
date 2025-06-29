@@ -16,10 +16,6 @@ fi
 
 command -v rpk >/dev/null || { echo "rpk (Redpanda CLI) not found."; exit 1; }
 
-echo "Configuring Redpanda..."
-rpk redpanda mode production
-rpk redpanda tune all
-
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
 ansible-playbook -i inventory setup_k3s.yaml
