@@ -25,9 +25,16 @@
         --namespace cert-manager
         --create-namespace
 
-    - name: Install Redpanda Operator CRDs
+    - name: Clone Redpanda Operator CRDs locally
+      git:
+        repo: https://github.com/redpanda-data/redpanda-operator
+        dest: /tmp/redpanda-operator
+        version: v2.4.2
+        depth: 1
+
+    - name: Apply Redpanda Operator CRDs from local path
       shell: |
-        kubectl kustomize "https://github.com/redpanda-data/redpanda-operator//operator/config/crd?ref=v2.4.2" | kubectl apply --server-side -f -
+        kubectl kustomize /tmp/redpanda-operator/operator/config/crd | kubectl apply --server-side -f -
       args:
         executable: /bin/bash
 
