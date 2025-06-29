@@ -88,7 +88,7 @@
                   cpu: 1
                   memory: 2500Mi
               statefulset:
-                replicas: 2
+                replicas: 1
                 extraVolumes: |-
                   - name: redpanda-io-config
                     configMap:
