@@ -2,7 +2,7 @@
 Linux packages needs to be installed ufw, pip, pipx and redpanda rpk.
 
 ## RUN
-To benchmark system to get io config file use ```sudo bash tune.sh``` Then ```sudo bash setup.sh```
+To benchmark system to get IO config file use ```sudo bash tune.sh``` Then ```sudo bash setup.sh```
 
 ## Access
 - Use ```kubectl port-forward -n redpanda svc/redpanda-console --address 0.0.0.0 8080:8080``` to access the console.
