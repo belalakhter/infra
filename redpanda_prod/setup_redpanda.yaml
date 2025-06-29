@@ -51,15 +51,17 @@
     - name: Wait for Redpanda controller rollout
       command: kubectl --namespace redpanda rollout status --watch deployment/redpanda-controller-operator
 
-    - name: Create ConfigMap for redpanda-io-config
+    - name: Check if redpanda-io-config ConfigMap exists
+      command: kubectl get configmap redpanda-io-config -n redpanda
+      register: configmap_check
+      ignore_errors: yes
+
+    - name: Create ConfigMap for redpanda-io-config if not exists
       command: >
         kubectl create configmap redpanda-io-config
         --namespace redpanda
         --from-file=/etc/redpanda/io-config.yaml
-      args:
-        creates: /tmp/created_redpanda_io_config_cm
-      register: configmap_create_result
-      ignore_errors: yes
+      when: configmap_check.rc != 0
 
     - name: Touch file to mark configmap created
       file:
