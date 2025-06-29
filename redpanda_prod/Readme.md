@@ -11,6 +11,6 @@ https://docs.redpanda.com/current/deploy/deployment-option/self-hosted/kubernete
 
 ## Note
 - Add more cpu and memeory as per hardware
-- Increase the number of partitions and replicas for better performance
+- Increase the number of replicas for better performance
 - Once run Get the TSL certificate from kubectl<br>  https://docs.redpanda.com/current/deploy/deployment-option/self-hosted/kubernetes/k-production-deployment/#tls-certificates
 - Advertise ip-address or domain to resolve dns issue from client<br>  https://docs.redpanda.com/current/manage/kubernetes/networking/external/k-nodeport/
