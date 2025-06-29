@@ -81,6 +81,7 @@
           spec:
             clusterSpec:
               external:
+                enabled: true
                 type: NodePort
               resources:
                 requests:
