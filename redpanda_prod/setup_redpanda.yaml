@@ -84,12 +84,12 @@
                 enabled: true
                 type: NodePort
               resources:
-                requests:
-                  cpu: 500m
-                  memory: 1500Mi
-                limits:
-                  cpu: 1
-                  memory: 2500Mi
+                cpu:
+                  cores: 1
+                memory:
+                  enable_memory_locking: true
+                  container:
+                    max: 2Gi
               statefulset:
                 replicas: 1
                 extraVolumes: |-
