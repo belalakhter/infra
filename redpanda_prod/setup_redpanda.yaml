@@ -56,12 +56,13 @@
       register: configmap_check
       ignore_errors: yes
 
-    - name: Create ConfigMap for redpanda-io-config if not exists
+    - name: Create ConfigMap for redpanda-io-config
       command: >
         kubectl create configmap redpanda-io-config
         --namespace redpanda
         --from-file=/etc/redpanda/io-config.yaml
       when: configmap_check.rc != 0
+      register: configmap_create_result
 
     - name: Touch file to mark configmap created
       file:
