@@ -58,7 +58,7 @@
 
     - name: Install K3s server without Flannel
       shell: |
-        curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="server" sh -s - --flannel-backend none
+        curl -sfL https://get.k3s.io | sh -
       args:
         executable: /bin/bash
 
